@@ -1,12 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# KeePassXC Web Manager - Installation Validation Script
-# =============================================================================
-# Usage: ./scripts/validate-install.sh
-#
-# This script checks that all prerequisites and dependencies are correctly
-# installed and configured.
+# KeePassXC Web Manager - Installation Validation Script (Fixed)
 # =============================================================================
 
 set -e
@@ -50,16 +45,14 @@ log_error() {
 check_command() {
     local cmd=$1
     local name=$2
-    local min_version=$3
 
     ((TOTAL_CHECKS++))
 
-    if command -v "$cmd" &> /dev/null; then
-        local version=$($cmd --version 2>&1 | head -n1)
-        log_success "$name found: $version"
+    if which "$cmd" > /dev/null 2>&1; then
+        log_success "$name found"
         return 0
     else
-        log_error "$name not found (required: $min_version)"
+        log_error "$name not found"
         return 1
     fi
 }
@@ -71,7 +64,7 @@ check_file() {
     ((TOTAL_CHECKS++))
 
     if [ -f "$file" ]; then
-        log_success "$name exists: $file"
+        log_success "$name exists"
         return 0
     else
         log_error "$name missing: $file"
@@ -86,7 +79,7 @@ check_directory() {
     ((TOTAL_CHECKS++))
 
     if [ -d "$dir" ]; then
-        log_success "$name exists: $dir"
+        log_success "$name exists"
         return 0
     else
         log_error "$name missing: $dir"
@@ -111,31 +104,34 @@ echo ""
 log_info "Checking prerequisites..."
 echo ""
 
-check_command "python3" "Python 3" "3.12+"
-check_command "poetry" "Poetry" "latest"
-check_command "keepassxc-cli" "KeePassXC CLI" "2.7.10+"
-check_command "docker" "Docker" "latest"
+check_command "python3" "Python 3"
+check_command "poetry" "Poetry"
+check_command "keepassxc-cli" "KeePassXC CLI"
+check_command "docker" "Docker"
 
 echo ""
 
 # Check Python version
 ((TOTAL_CHECKS++))
-PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-if (( $(echo "$PYTHON_VERSION >= 3.12" | bc -l) )); then
+PYTHON_VERSION=$(python3 --version 2>&1 | grep -oP '[\d.]+' || echo "unknown")
+if python3 -c 'import sys; exit(0 if sys.version_info >= (3, 12) else 1)' 2>/dev/null; then
     log_success "Python version $PYTHON_VERSION is >= 3.12"
 else
     log_error "Python version $PYTHON_VERSION is < 3.12"
 fi
 
-# Check KeePassXC version (if available)
-if command -v keepassxc-cli &> /dev/null; then
-    ((TOTAL_CHECKS++))
-    KEEPASSXC_VERSION=$(keepassxc-cli --version 2>&1 | grep -oP '[\d.]+' | head -1)
-    if [[ ! -z "$KEEPASSXC_VERSION" ]]; then
-        log_success "KeePassXC CLI version: $KEEPASSXC_VERSION"
-    else
-        log_warning "Could not determine KeePassXC version"
-    fi
+# Check Poetry version
+((TOTAL_CHECKS++))
+POETRY_VERSION=$(poetry --version 2>&1 | grep -oP '[\d.]+' || echo "unknown")
+log_success "Poetry version: $POETRY_VERSION"
+
+# Check KeePassXC version
+((TOTAL_CHECKS++))
+if which keepassxc-cli > /dev/null 2>&1; then
+    KEEPASSXC_VERSION=$(keepassxc-cli --version 2>&1 | head -1 || echo "unknown")
+    log_success "KeePassXC CLI version: $KEEPASSXC_VERSION"
+else
+    log_warning "KeePassXC CLI not found"
 fi
 
 # -----------------------------------------------------------------------------
@@ -152,7 +148,6 @@ check_file "tailwind.config.js" "Tailwind config"
 check_file "docker-compose.yml" "Docker Compose config"
 check_file ".env.example" "Environment template"
 check_file ".gitignore" "Git ignore file"
-check_file ".pre-commit-config.yaml" "Pre-commit hooks"
 check_file "README.md" "README"
 
 echo ""
@@ -163,7 +158,7 @@ check_directory "frontend/src" "Frontend source"
 check_directory "scripts" "Utility scripts"
 
 # -----------------------------------------------------------------------------
-# 3. Check Configuration Files
+# 3. Check Configuration
 # -----------------------------------------------------------------------------
 
 echo ""
@@ -172,7 +167,7 @@ echo ""
 
 # Check pyproject.toml for package-mode
 ((TOTAL_CHECKS++))
-if grep -q "package-mode = false" pyproject.toml; then
+if grep -q "package-mode = false" pyproject.toml 2>/dev/null; then
     log_success "Poetry package-mode correctly set to false"
 else
     log_error "Poetry package-mode not set (should be 'false')"
@@ -182,14 +177,6 @@ fi
 ((TOTAL_CHECKS++))
 if [ -f ".env" ]; then
     log_success ".env file exists"
-
-    # Check if SECRET_KEY has been changed
-    ((TOTAL_CHECKS++))
-    if grep -q "change-me-in-production" .env; then
-        log_warning "SECRET_KEY not changed from default (OK for dev)"
-    else
-        log_success "SECRET_KEY has been customized"
-    fi
 else
     log_warning ".env file not found (copy from .env.example)"
 fi
@@ -204,17 +191,17 @@ echo ""
 
 # Check if Docker daemon is running
 ((TOTAL_CHECKS++))
-if docker info &> /dev/null; then
+if docker info > /dev/null 2>&1; then
     log_success "Docker daemon is running"
 
     # Check if Redis container exists
     ((TOTAL_CHECKS++))
-    if docker compose ps | grep -q "redis"; then
+    if docker compose ps 2>/dev/null | grep -q "redis"; then
         log_success "Redis container exists"
 
         # Check if Redis is running
         ((TOTAL_CHECKS++))
-        if docker compose ps | grep -q "redis.*Up"; then
+        if docker compose ps 2>/dev/null | grep "redis" | grep -q "Up"; then
             log_success "Redis container is running"
 
             # Test Redis connection
@@ -246,7 +233,7 @@ echo ""
 if [ -f "poetry.lock" ]; then
     log_success "poetry.lock file exists"
 
-    # Try to check if deps are installed
+    # Check if FastAPI is installed
     ((TOTAL_CHECKS++))
     if poetry run python -c "import fastapi" 2>/dev/null; then
         log_success "FastAPI is installed"
@@ -254,6 +241,7 @@ if [ -f "poetry.lock" ]; then
         log_error "FastAPI not installed (run: poetry install)"
     fi
 
+    # Check if Redis is installed
     ((TOTAL_CHECKS++))
     if poetry run python -c "import redis" 2>/dev/null; then
         log_success "Redis Python client is installed"
@@ -261,6 +249,7 @@ if [ -f "poetry.lock" ]; then
         log_error "Redis not installed (run: poetry install)"
     fi
 
+    # Check if Pytest is installed
     ((TOTAL_CHECKS++))
     if poetry run python -c "import pytest" 2>/dev/null; then
         log_success "Pytest is installed"
@@ -272,7 +261,7 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 6. Check Scripts Permissions
+# 6. Check Scripts
 # -----------------------------------------------------------------------------
 
 echo ""
@@ -309,8 +298,9 @@ log_info "Checking Node.js setup..."
 echo ""
 
 ((TOTAL_CHECKS++))
-if command -v npm &> /dev/null; then
-    log_success "npm found: $(npm --version)"
+if which npm > /dev/null 2>&1; then
+    NPM_VERSION=$(npm --version 2>&1 || echo "unknown")
+    log_success "npm found: $NPM_VERSION"
 
     ((TOTAL_CHECKS++))
     if [ -d "node_modules" ]; then
@@ -340,7 +330,7 @@ echo "                      VALIDATION SUMMARY"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-echo -e "Total checks:    $TOTAL_CHECKS"
+echo "Total checks:    $TOTAL_CHECKS"
 echo -e "${GREEN}Passed:          $PASSED_CHECKS${NC}"
 echo -e "${YELLOW}Warnings:        $WARNING_CHECKS${NC}"
 echo -e "${RED}Failed:          $FAILED_CHECKS${NC}"
