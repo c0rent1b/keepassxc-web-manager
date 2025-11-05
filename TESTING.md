@@ -45,7 +45,7 @@ docker --version
 #### Backend (Python)
 
 ```bash
-cd /home/user/keepassxc-web-manager/backend
+cd ~/Build/keepassxc-web-manager/backend
 
 # Installer les dépendances Python
 poetry install
@@ -57,7 +57,7 @@ poetry run python -c "import fastapi; import uvicorn; print('✓ Dependencies OK
 #### Frontend (Node.js)
 
 ```bash
-cd /home/user/keepassxc-web-manager/frontend
+cd ~/Build/keepassxc-web-manager/frontend
 
 # Installer les dépendances Node.js
 npm install
@@ -72,7 +72,7 @@ npm list tailwindcss
 ### Étape 3 : Build Tailwind CSS
 
 ```bash
-cd /home/user/keepassxc-web-manager/frontend
+cd ~/Build/keepassxc-web-manager/frontend
 
 # Build CSS (production)
 npm run build:css
@@ -96,11 +96,7 @@ ls -lh public/css/tailwind.min.css
 mkdir -p ~/test-databases
 cd ~/test-databases
 
-# Créer une base KeePassXC de test
-# Note : keepassxc-cli ne supporte pas la création directe
-# Vous devez créer la base avec KeePassXC GUI ou utiliser une base existante
-
-# Si vous avez KeePassXC GUI :
+# Créer une base KeePassXC de test avec GUI :
 # 1. Ouvrir KeePassXC
 # 2. Fichier > Nouvelle base de données
 # 3. Nom : test-database.kdbx
@@ -111,18 +107,11 @@ cd ~/test-databases
 #    - Personal/Email (user: email@example.com, pass: email123)
 ```
 
-**Option B : Base Vide (CLI)**
-
-Si vous ne pouvez pas créer de base avec GUI, créez un fichier minimal :
+**Option B : Utiliser une base existante**
 
 ```bash
-# Créer répertoire
-mkdir -p ~/test-databases
-
-# Note : Pour une vraie base, utilisez KeePassXC GUI
-echo "⚠️  Vous devez créer une base .kdbx avec KeePassXC GUI"
-echo "📍 Emplacement : ~/test-databases/test-database.kdbx"
-echo "🔑 Mot de passe suggéré : test_master_password"
+# Si vous avez déjà une base KeePassXC, notez son chemin
+# Exemple : ~/Documents/my-passwords.kdbx
 ```
 
 ---
@@ -130,19 +119,13 @@ echo "🔑 Mot de passe suggéré : test_master_password"
 ### Étape 5 : Configuration Environnement
 
 ```bash
-cd /home/user/keepassxc-web-manager/backend
+cd ~/Build/keepassxc-web-manager/backend
 
 # Copier le fichier .env.example
 cp .env.example .env
 
-# Éditer .env (optionnel, les valeurs par défaut fonctionnent)
-# Vérifier ces paramètres :
-cat .env | grep -E "(SECRET_KEY|SESSION_TIMEOUT|CACHE_BACKEND)"
-
-# Devrait afficher :
-# SECRET_KEY="your-super-secret-key-change-me-in-production-min-32-chars"
-# SESSION_TIMEOUT=1800
-# CACHE_BACKEND="memory"  # Pas besoin de Redis pour tester
+# Les valeurs par défaut fonctionnent, mais vous pouvez les modifier si nécessaire
+cat .env
 ```
 
 ---
@@ -152,7 +135,10 @@ cat .env | grep -E "(SECRET_KEY|SESSION_TIMEOUT|CACHE_BACKEND)"
 **Si vous voulez tester avec Redis :**
 
 ```bash
-cd /home/user/keepassxc-web-manager
+cd ~/Build/keepassxc-web-manager
+
+# Vérifier que Docker est démarré
+sudo systemctl start docker
 
 # Lancer Redis avec Docker Compose
 docker compose up -d redis
@@ -164,49 +150,54 @@ docker compose ps
 # Tester Redis
 docker exec -it keepassxc-web-manager-redis-1 redis-cli ping
 # Doit afficher : PONG
-
-# Dans .env, vérifier :
-# CACHE_BACKEND="redis"
 ```
 
 **Si vous n'utilisez pas Redis :**
 
-```bash
-# Dans .env, s'assurer que :
-# CACHE_BACKEND="memory"
-# (le cache mémoire sera utilisé automatiquement)
-```
+L'application utilisera automatiquement le cache mémoire (fallback automatique).
 
 ---
 
-### Étape 7 : Lancer le Backend
+### Étape 7 : Lancer l'Application
+
+**Option A : Avec le script start.sh (Recommandé)**
 
 ```bash
-cd /home/user/keepassxc-web-manager/backend
+cd ~/Build/keepassxc-web-manager
 
-# Option A : Lancer avec le script start.sh
-chmod +x ../scripts/start.sh
-../scripts/start.sh
+# Rendre le script exécutable
+chmod +x scripts/start.sh
 
-# Option B : Lancer directement avec Poetry
-poetry run python -m app.main
+# Lancer en mode développement
+./scripts/start.sh
 
-# Option C : Lancer avec Uvicorn (recommandé pour dev)
+# Ou explicitement
+./scripts/start.sh development
+```
+
+**Option B : Manuellement**
+
+```bash
+cd ~/Build/keepassxc-web-manager/backend
+
+# Lancer avec Uvicorn
 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# Vous devriez voir :
-# ================================================================================
-# KeePassXC Web Manager v2.0.0-alpha
-# ================================================================================
-# Environment: development
-# Debug mode: False
-# KeePassXC CLI: keepassxc-cli
-# Cache backend: memory
-# API docs: True
-# ================================================================================
-# ✓ KeePassXC CLI available: version 2.7.10
-# Application started successfully
-# INFO:     Uvicorn running on http://0.0.0.0:8000
+Vous devriez voir :
+```
+================================================================================
+KeePassXC Web Manager v2.0.0-alpha
+================================================================================
+Environment: development
+Debug mode: False
+KeePassXC CLI: keepassxc-cli
+Cache backend: memory
+API docs: True
+================================================================================
+✓ KeePassXC CLI available: version 2.7.10
+Application started successfully
+INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
 
 ---
@@ -263,7 +254,7 @@ google-chrome http://localhost:8000/
 
 2. **Entrer les credentials** :
    ```
-   Database Path : /home/user/test-databases/test-database.kdbx
+   Database Path : /home/corentin/test-databases/test-database.kdbx
    Password      : test_master_password
    Keyfile       : (laisser vide si pas de keyfile)
    ```
@@ -372,7 +363,7 @@ google-chrome http://localhost:8000/
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "database_path": "/home/user/test-databases/test-database.kdbx",
+    "database_path": "/home/corentin/test-databases/test-database.kdbx",
     "password": "test_master_password"
   }'
 
@@ -403,34 +394,6 @@ curl http://localhost:8000/api/v1/databases/info \
 curl -X POST http://localhost:8000/api/v1/auth/logout \
   -H "Authorization: Bearer $TOKEN"
 ```
-
----
-
-### Étape 11 : Test des Fonctionnalités Avancées
-
-#### Test Dark Mode
-
-1. **Activer le dark mode** dans les paramètres de votre OS
-2. **Rafraîchir la page**
-   - ✅ Interface passe en mode sombre
-   - ✅ Fond gris foncé
-   - ✅ Texte blanc/gris clair
-
-#### Test Responsive
-
-1. **Ouvrir DevTools** (F12)
-2. **Activer mode responsive** (Ctrl+Shift+M)
-3. **Tester différentes tailles** :
-   - Mobile (320px) : 1 colonne, pas de sidebar
-   - Tablet (768px) : 2 colonnes, sidebar caché
-   - Desktop (1280px) : 3 colonnes, sidebar visible
-
-#### Test Copy to Clipboard
-
-1. **Ouvrir une entrée**
-2. **Cliquer "Copy"** sur username
-3. **Coller** (Ctrl+V) dans un éditeur de texte
-   - ✅ Username collé correctement
 
 ---
 
@@ -587,50 +550,6 @@ Après ces tests, vous devriez avoir :
 - Chargement on-demand
 - JWT authentication
 - CORS configuré
-
----
-
-## 📝 Rapport de Test
-
-**Date** : _______________
-
-**Environnement** :
-- OS : _______________
-- Python : _______________
-- KeePassXC CLI : _______________
-
-**Résultats** :
-- Backend : ☐ OK  ☐ Erreurs
-- Frontend : ☐ OK  ☐ Erreurs
-- API : ☐ OK  ☐ Erreurs
-
-**Commentaires** :
-_________________________________________________________________
-_________________________________________________________________
-_________________________________________________________________
-
----
-
-## 🆘 Support
-
-En cas de problème :
-1. Vérifier les logs backend (dans le terminal)
-2. Vérifier la console navigateur (F12)
-3. Vérifier le fichier .env
-4. Consulter la documentation API (/docs)
-
-**Logs utiles** :
-```bash
-# Logs backend
-cd backend
-poetry run uvicorn app.main:app --reload --log-level debug
-
-# Logs Redis (si utilisé)
-docker compose logs redis
-
-# Test keepassxc-cli
-keepassxc-cli ls /path/to/test-database.kdbx
-```
 
 ---
 

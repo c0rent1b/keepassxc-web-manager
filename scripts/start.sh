@@ -90,14 +90,30 @@ check_requirements() {
 start_services() {
     log_info "Starting services..."
 
-    # Start Redis if using Docker Compose
+    # Start Redis if using Docker Compose (optional)
     if [ -f "$PROJECT_ROOT/docker-compose.yml" ]; then
-        log_info "Starting Redis with Docker Compose..."
-        cd "$PROJECT_ROOT"
-        docker-compose up -d redis
-        log_success "Redis started"
+        # Check if docker or docker compose is available
+        if command -v docker &> /dev/null; then
+            log_info "Starting Redis with Docker Compose..."
+            cd "$PROJECT_ROOT"
+
+            # Try Docker Compose V2 (docker compose) first, then V1 (docker-compose)
+            if docker compose version &> /dev/null; then
+                docker compose up -d redis
+                log_success "Redis started (Docker Compose V2)"
+            elif command -v docker-compose &> /dev/null; then
+                docker-compose up -d redis
+                log_success "Redis started (Docker Compose V1)"
+            else
+                log_warning "Docker Compose not available - will use memory cache"
+                log_info "Application will work without Redis (memory cache fallback)"
+            fi
+        else
+            log_warning "Docker not available - will use memory cache"
+            log_info "Application will work without Redis (memory cache fallback)"
+        fi
     else
-        log_warning "docker-compose.yml not found - make sure Redis is running"
+        log_warning "docker-compose.yml not found - will use memory cache"
     fi
 }
 
