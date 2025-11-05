@@ -1,0 +1,163 @@
+# =============================================================================
+# Pre-commit hooks configuration
+# =============================================================================
+# Install: poetry run pre-commit install
+# Run manually: poetry run pre-commit run --all-files
+# Update hooks: poetry run pre-commit autoupdate
+
+default_language_version:
+  python: python3.12
+
+repos:
+  # =============================================================================
+  # General file checks
+  # =============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # File formatting
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+      # File checks
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: destroyed-symlinks
+
+      # Python specific
+      - id: check-ast
+      - id: check-builtin-literals
+      - id: check-docstring-first
+      - id: debug-statements
+      - id: fix-byte-order-marker
+
+      # Config files
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+
+      # Secrets detection
+      - id: detect-private-key
+
+  # =============================================================================
+  # Security checks
+  # =============================================================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: [
+          '--baseline', '.secrets.baseline',
+          '--exclude-files', '\.git|\.env\.example|poetry\.lock'
+        ]
+        exclude: |
+          (?x)^(
+            .*\.lock|
+            \.env\.example|
+            \.secrets\.baseline
+          )$
+
+  # =============================================================================
+  # Python code quality - Ruff (replaces Black, isort, flake8, etc.)
+  # =============================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.1
+    hooks:
+      # Linting
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+      # Formatting
+      - id: ruff-format
+
+  # =============================================================================
+  # Type checking - mypy
+  # =============================================================================
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-aiofiles
+          - types-passlib
+          - types-redis
+        args: [--strict, --ignore-missing-imports]
+        exclude: |
+          (?x)^(
+            backend/tests/.*|
+            backend/alembic/versions/.*
+          )$
+
+  # =============================================================================
+  # Security scanning - Bandit
+  # =============================================================================
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.7
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml, -r, backend/app]
+        additional_dependencies: ['bandit[toml]']
+        exclude: backend/tests/
+
+  # =============================================================================
+  # Dockerfile linting
+  # =============================================================================
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3009]
+
+  # =============================================================================
+  # YAML linting
+  # =============================================================================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint.yaml]
+
+  # =============================================================================
+  # Custom hooks
+  # =============================================================================
+  - repo: local
+    hooks:
+      # Check for sensitive data in SQLite schemas
+      - id: check-sqlite-sensitive-data
+        name: Check SQLite schemas for sensitive data
+        entry: python scripts/check_sensitive_data.py
+        language: python
+        files: backend/app/infrastructure/database/.*\.py$
+        pass_filenames: true
+
+      # Ensure no .kdbx or .key files are committed
+      - id: check-keepass-files
+        name: Check for KeePassXC files
+        entry: bash -c 'if git diff --cached --name-only | grep -E "\.(kdbx|key|keyx)$"; then echo "ERROR: KeePassXC files should not be committed!"; exit 1; fi'
+        language: system
+        always_run: true
+        pass_filenames: false
+
+      # Check for TODO/FIXME in production code
+      - id: check-todos
+        name: Check for TODO/FIXME comments
+        entry: bash -c 'if [ "$ENVIRONMENT" = "production" ]; then grep -rn "TODO\|FIXME" backend/app/ && exit 1 || exit 0; fi'
+        language: system
+        always_run: false
+        pass_filenames: false
+
+# =============================================================================
+# Configuration for specific hooks
+# =============================================================================
+
+# Bandit configuration (security)
+[tool.bandit]
+exclude_dirs = ["/tests/"]
+skips = ["B101"]  # Skip assert_used in tests

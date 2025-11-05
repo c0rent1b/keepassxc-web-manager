@@ -1,0 +1,261 @@
+# =============================================================================
+# KeePassXC Web Manager - .gitignore
+# =============================================================================
+
+# =============================================================================
+# SECURITY - NEVER COMMIT THESE FILES
+# =============================================================================
+*.kdbx
+*.key
+*.keyx
+.env
+.env.local
+.env.*.local
+secrets/
+*.secret
+master_password.txt
+
+# SSL/TLS certificates
+*.pem
+*.crt
+*.key
+*.csr
+*.p12
+*.pfx
+
+# =============================================================================
+# Python
+# =============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+coverage_html/
+
+# =============================================================================
+# Poetry
+# =============================================================================
+poetry.lock
+.venv/
+venv/
+ENV/
+env/
+.env/
+
+# =============================================================================
+# IDEs and Editors
+# =============================================================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# =============================================================================
+# Operating Systems
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+
+# =============================================================================
+# Databases
+# =============================================================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+keepass_metadata.db*
+
+# Exclude test databases
+!backend/tests/fixtures/*.db
+
+# =============================================================================
+# Logs
+# =============================================================================
+*.log
+logs/
+*.log.*
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# Cache and temporary files
+# =============================================================================
+.cache/
+*.tmp
+*.temp
+tmp/
+temp/
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# =============================================================================
+# Redis
+# =============================================================================
+dump.rdb
+*.rdb
+redis-data/
+
+# =============================================================================
+# Docker
+# =============================================================================
+docker-compose.override.yml
+.docker/
+
+# =============================================================================
+# Node.js (for Tailwind CSS)
+# =============================================================================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# =============================================================================
+# Tailwind CSS
+# =============================================================================
+frontend/src/css/tailwind.compiled.css
+frontend/public/css/
+
+# =============================================================================
+# Build artifacts
+# =============================================================================
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =============================================================================
+# Documentation
+# =============================================================================
+docs/_build/
+docs/_static/
+docs/_templates/
+site/
+
+# =============================================================================
+# Backup files
+# =============================================================================
+*.bak
+*.backup
+*.old
+*~
+
+# =============================================================================
+# Project specific
+# =============================================================================
+# Development databases
+dev_database.db
+test_database.db
+
+# Uploaded files (if any)
+uploads/
+media/
+
+# Static files collected
+staticfiles/
+static_collected/
+
+# =============================================================================
+# Alembic
+# =============================================================================
+# Don't ignore migration files
+!backend/alembic/versions/*.py
+
+# =============================================================================
+# Jupyter Notebooks
+# =============================================================================
+.ipynb_checkpoints/
+*.ipynb
+
+# =============================================================================
+# Pre-commit
+# =============================================================================
+.pre-commit-config.yaml.bak
