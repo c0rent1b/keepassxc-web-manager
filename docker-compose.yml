@@ -1,0 +1,200 @@
+version: '3.8'
+
+# =============================================================================
+# KeePassXC Web Manager - Docker Compose Configuration
+# =============================================================================
+# Usage:
+#   Development: docker-compose up -d
+#   Production:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#   Stop:        docker-compose down
+#   Logs:        docker-compose logs -f [service]
+
+services:
+  # ===========================================================================
+  # Redis - Cache Service
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: keepassxc-redis
+    restart: unless-stopped
+
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+
+    volumes:
+      - redis-data:/data
+
+    networks:
+      - keepassxc-network
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # Web Application (for production deployment)
+  # ===========================================================================
+  # Uncomment for full Docker deployment
+  # web:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile
+  #     args:
+  #       - PYTHON_VERSION=3.12
+  #
+  #   container_name: keepassxc-web
+  #   restart: unless-stopped
+  #
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #
+  #   ports:
+  #     - "${PORT:-8000}:8000"
+  #
+  #   environment:
+  #     - ENVIRONMENT=production
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     - DATABASE_URL=sqlite+aiosqlite:///./data/keepass_metadata.db
+  #
+  #   env_file:
+  #     - .env
+  #
+  #   volumes:
+  #     # Mount for KeePassXC databases (read-only)
+  #     - ./data:/app/data:ro
+  #     # Mount for SQLite metadata database
+  #     - metadata-db:/app/data
+  #     # Mount for logs
+  #     - ./logs:/app/logs
+  #
+  #   networks:
+  #     - keepassxc-network
+  #
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "5"
+
+  # ===========================================================================
+  # PostgreSQL (Optional - Alternative to SQLite for production)
+  # ===========================================================================
+  # Uncomment if you want to use PostgreSQL instead of SQLite
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: keepassxc-postgres
+  #   restart: unless-stopped
+  #
+  #   environment:
+  #     - POSTGRES_DB=keepassxc_metadata
+  #     - POSTGRES_USER=keepassxc
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+  #
+  #   ports:
+  #     - "${POSTGRES_PORT:-5432}:5432"
+  #
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #
+  #   networks:
+  #     - keepassxc-network
+  #
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U keepassxc"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+  # ===========================================================================
+  # Redis Commander (Optional - Redis GUI)
+  # ===========================================================================
+  # Uncomment for development - Web UI for Redis
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: keepassxc-redis-commander
+  #   restart: unless-stopped
+  #
+  #   depends_on:
+  #     - redis
+  #
+  #   environment:
+  #     - REDIS_HOSTS=local:redis:6379
+  #
+  #   ports:
+  #     - "8081:8081"
+  #
+  #   networks:
+  #     - keepassxc-network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  keepassxc-network:
+    driver: bridge
+    name: keepassxc-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  redis-data:
+    name: keepassxc-redis-data
+    driver: local
+
+  # metadata-db:
+  #   name: keepassxc-metadata-db
+  #   driver: local
+
+  # postgres-data:
+  #   name: keepassxc-postgres-data
+  #   driver: local
+
+# =============================================================================
+# Notes
+# =============================================================================
+# Development workflow:
+#   1. Start only Redis: docker-compose up -d redis
+#   2. Run app locally: poetry run uvicorn app.main:app --reload
+#
+# Production workflow:
+#   1. Uncomment 'web' service above
+#   2. Build and run: docker-compose up -d --build
+#
+# Useful commands:
+#   - View logs: docker-compose logs -f redis
+#   - Shell into Redis: docker-compose exec redis redis-cli
+#   - Stop all: docker-compose down
+#   - Remove volumes: docker-compose down -v
+#   - Rebuild: docker-compose up -d --build
