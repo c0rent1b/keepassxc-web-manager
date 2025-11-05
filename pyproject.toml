@@ -8,6 +8,7 @@ license = "MIT"
 homepage = "https://github.com/c0rent1b/keepassxc-web-manager"
 repository = "https://github.com/c0rent1b/keepassxc-web-manager"
 keywords = ["keepassxc", "password-manager", "web-interface", "fastapi", "alpine-js"]
+package-mode = false
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -21,7 +22,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.12"  # Compatible avec 3.12, 3.13+
 # Web Framework
 fastapi = "^0.110.0"
 uvicorn = {extras = ["standard"], version = "^0.29.0"}
@@ -79,11 +80,6 @@ types-redis = "^4.6.0"
 ipython = "^8.21.0"
 rich = "^13.7.0"
 
-[tool.poetry.scripts]
-# CLI commands
-start = "scripts.start:main"
-dev = "scripts.dev:main"
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -92,7 +88,7 @@ build-backend = "poetry.core.masonry.api"
 # RUFF CONFIGURATION (Linting + Formatting)
 # =============================================================================
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 indent-width = 4
 
@@ -156,7 +152,7 @@ line-ending = "auto"
 # MYPY CONFIGURATION (Type Checking)
 # =============================================================================
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
