@@ -399,8 +399,8 @@ DecryptedPasswordDep = Annotated[str, Depends(get_decrypted_password)]
 # Optional authentication
 OptionalSessionDep = Annotated[Optional[Session], Depends(get_optional_session)]
 
-# Rate limiting
-RateLimitDep = Annotated[None, Depends(check_rate_limit)]
+# Rate limiting (for use in dependencies list)
+RateLimitDep = Depends(check_rate_limit)
 
 # Client info
 ClientInfoDep = Annotated[dict[str, str], Depends(get_client_info)]
